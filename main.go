@@ -10,7 +10,7 @@ import (
 	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
-	"gorm.io/driver/mysql"
+	"gorm.io/driver/sqlite" // แก้ไข: เปลี่ยนมาใช้ SQLite
 	"gorm.io/gorm"
 )
 
@@ -48,8 +48,8 @@ func main() {
 	os.MkdirAll("./uploads", 0755)
 
 	var err error
-	dsn := "root:@tcp(127.0.0.1:3306)/camera_shop?charset=utf8mb4&parseTime=True&loc=Local"
-	db, err = gorm.Open(mysql.Open(dsn), &gorm.Config{})
+	// แก้ไข: ใช้ SQLite สร้างไฟล์ database.db อัตโนมัติ (ไม่ต้องพึ่ง XAMPP)
+	db, err = gorm.Open(sqlite.Open("database.db"), &gorm.Config{})
 	if err != nil {
 		log.Fatal("Failed to connect to database")
 	}
@@ -97,10 +97,15 @@ func main() {
 		adminRoute.POST("/product/edit/:id", updateProductHandler)
 		adminRoute.POST("/product/delete/:id", deleteProductHandler)
 		adminRoute.POST("/order/update/:id", updateOrderStatusHandler)
-		adminRoute.POST("/order/delete/:id", adminDeleteOrderHandler) // เพิ่ม Route ลบออเดอร์สำหรับแอดมิน
+		adminRoute.POST("/order/delete/:id", adminDeleteOrderHandler)
 	}
 
-	r.Run(":8081")
+	// แก้ไข: ตั้งค่าให้ดึง Port จาก Render อัตโนมัติ (แต่รันในคอมตัวเองยังเป็น 8081)
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8081"
+	}
+	r.Run(":" + port)
 }
 
 func registerHandler(c *gin.Context) {
@@ -154,7 +159,6 @@ func indexHandler(c *gin.Context) {
 	userID := session.Get("user_id").(uint)
 	searchQuery := c.Query("search")
 
-	// ดึงข้อมูล User ปัจจุบันเพื่อเอาชื่อไปแสดงบนหน้าเว็บ
 	var currentUser User
 	db.Where("id = ?", userID).First(&currentUser)
 
@@ -168,7 +172,6 @@ func indexHandler(c *gin.Context) {
 	var orders []Order
 	db.Preload("Product").Where("user_id = ?", userID).Order("created_at desc").Find(&orders)
 
-	// ส่ง Username ไปที่ HTML
 	c.HTML(200, "index.html", gin.H{
 		"Products":    products,
 		"Orders":      orders,
@@ -308,10 +311,8 @@ func updateOrderStatusHandler(c *gin.Context) {
 	c.Redirect(302, "/admin/")
 }
 
-// เพิ่มฟังก์ชันสำหรับแอดมินลบออเดอร์โดยเฉพาะ
 func adminDeleteOrderHandler(c *gin.Context) {
 	orderID := c.Param("id")
-	// แอดมินสามารถลบออเดอร์ไหนก็ได้ ไม่ต้องเช็คเงื่อนไขเจ้าของ
 	db.Where("id = ?", orderID).Delete(&Order{})
 	c.Redirect(302, "/admin/")
 }
