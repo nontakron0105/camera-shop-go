@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style> body { font-family: 'Prompt', sans-serif; background-color: #f4f7f6; } </style>
+</head>
+<body class="container mt-4 mb-5">
+    <div class="d-flex justify-content-between align-items-center bg-dark text-white p-3 rounded shadow-sm mb-4">
+        <h2 class="fw-bold mb-0">ระบบจัดการหลังบ้าน (Admin)</h2>
+        <a href="/logout" class="btn btn-danger btn-sm">ออกจากระบบ</a>
+    </div>
+
+    <!-- จัดการออเดอร์ -->
+    <div class="card p-4 shadow-sm border-0 mb-4">
+        <h5 class="fw-bold mb-3">📦 รายการสั่งซื้อจากลูกค้า (Orders & Address)</h5>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light"><tr><th>ID</th><th>ลูกค้า</th><th>สินค้า</th><th>ที่อยู่จัดส่ง</th><th>สถานะ</th><th>จัดการ</th></tr></thead>
+                <tbody>
+                    {{range .Orders}}
+                    <tr>
+                        <td>#{{.ID}}</td>
+                        <td><span class="badge bg-secondary">{{.User.Username}}</span></td>
+                        <td>{{.Product.Title}}</td>
+                        <td><small class="text-primary">{{.Remark}}</small></td>
+                        <td class="fw-bold">{{.Status}}</td>
+                        <td>
+                            <!-- รวมปุ่มบันทึกสถานะ และ ปุ่มลบออเดอร์ ไว้ด้วยกัน -->
+                            <div class="d-flex gap-2">
+                                <form action="/admin/order/update/{{.ID}}" method="POST" class="d-flex gap-1">
+                                    <select name="status" class="form-select form-select-sm" style="width: 130px;">
+                                        <option value="รอตรวจสอบ (Pending)">รอตรวจสอบ</option>
+                                        <option value="กำลังจัดส่ง">กำลังจัดส่ง</option>
+                                        <option value="จัดส่งสำเร็จ">จัดส่งสำเร็จ</option>
+                                    </select>
+                                    <button type="submit" class="btn btn-success btn-sm">บันทึก</button>
+                                </form>
+                                
+                                <form action="/admin/order/delete/{{.ID}}" method="POST">
+                                    <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('ยืนยันการลบคำสั่งซื้อ #{{.ID}} ใช่หรือไม่?');">
+                                        <i class="fa-solid fa-trash"></i> ลบ
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {{end}}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- ฟอร์มเพิ่มสินค้า (อัปโหลด 3 รูป) -->
+        <div class="col-md-4">
+            <div class="card p-4 shadow-sm border-0">
+                <h5 class="fw-bold mb-3 text-primary">+ เพิ่มสินค้าใหม่</h5>
+                <form action="/admin/product" method="POST" enctype="multipart/form-data">
+                    <input type="text" name="title" class="form-control mb-2" placeholder="ชื่อสินค้า/รุ่นกล้อง" required>
+                    <textarea name="description" class="form-control mb-3" rows="3" placeholder="สเปค / ราคา"></textarea>
+                    
+                    <label class="form-label small fw-bold text-muted mb-0">🖼️ รูปหลัก (ปก):</label>
+                    <input type="file" name="image" class="form-control form-control-sm mb-2" accept="image/*">
+                    
+                    <label class="form-label small text-muted mb-0">📷 รูปเพิ่มเติม 1:</label>
+                    <input type="file" name="image2" class="form-control form-control-sm mb-2" accept="image/*">
+                    
+                    <label class="form-label small text-muted mb-0">📷 รูปเพิ่มเติม 2:</label>
+                    <input type="file" name="image3" class="form-control form-control-sm mb-4" accept="image/*">
+                    
+                    <button type="submit" class="btn btn-primary w-100 fw-bold rounded-pill">บันทึกสินค้าลงคลัง</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- รายการสินค้า -->
+        <div class="col-md-8">
+            <div class="card p-4 shadow-sm border-0">
+                <h5 class="fw-bold mb-3">🏷️ จัดการคลังสินค้า (Products)</h5>
+                <ul class="list-group">
+                    {{range .Products}}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>{{.Title}}</strong> 
+                            
+                            <!-- เงื่อนไขเปลี่ยนสีสถานะสินค้า (แดง/เขียว) -->
+                            {{if eq .Status "InStock"}}
+                                <span class="badge bg-success ms-2">{{.Status}}</span>
+                            {{else}}
+                                <span class="badge bg-danger ms-2">{{.Status}}</span>
+                            {{end}}
+                            
+                            <br><small class="text-muted desc-truncate">{{.Description}}</small>
+                        </div>
+                        <div class="d-flex gap-1">
+                            <a href="/admin/product/edit/{{.ID}}" class="btn btn-sm btn-outline-primary">แก้ไข</a>
+                            <form action="/admin/product/delete/{{.ID}}" method="POST" style="display:inline;">
+                                <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('ลบสินค้านี้?');">ลบ</button>
+                            </form>
+                        </div>
+                    </li>
+                    {{end}}
+                </ul>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

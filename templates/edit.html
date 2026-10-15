@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <title>Edit Product</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style> body { font-family: 'Prompt', sans-serif; background-color: #f4f7f6; } </style>
+</head>
+<body class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card p-4 shadow-sm border-0">
+                <h4 class="fw-bold text-primary mb-3">✏️ แก้ไขข้อมูลสินค้า</h4>
+                
+                <!-- ฟอร์มดึงข้อมูลสินค้าเดิมมาแสดงเพื่อรอแก้ไข -->
+                <form action="/admin/product/edit/{{.Product.ID}}" method="POST" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">ชื่อสินค้า/รุ่นกล้อง</label>
+                        <input type="text" name="title" class="form-control" value="{{.Product.Title}}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">สเปค / ราคา</label>
+                        <textarea name="description" class="form-control" rows="4">{{.Product.Description}}</textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">สถานะ</label>
+                        <select name="status" class="form-select">
+                            <option value="InStock" {{if eq .Product.Status "InStock"}}selected{{end}}>พร้อมจำหน่าย (InStock)</option>
+                            <option value="Out of Stock" {{if eq .Product.Status "Out of Stock"}}selected{{end}}>สินค้าหมด (Out of Stock)</option>
+                        </select>
+                    </div>
+                    
+                    <hr>
+                    <p class="small text-danger fw-bold mb-2">* หากไม่ต้องการเปลี่ยนรูปภาพ ให้เว้นช่องเลือกไฟล์ไว้</p>
+                    <div class="mb-2">
+                        <label class="form-label small">รูปภาพหลัก (ปก):</label>
+                        <input type="file" name="image" class="form-control form-control-sm" accept="image/*">
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label small">รูปเพิ่มเติม 1:</label>
+                        <input type="file" name="image2" class="form-control form-control-sm" accept="image/*">
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label small">รูปเพิ่มเติม 2:</label>
+                        <input type="file" name="image3" class="form-control form-control-sm" accept="image/*">
+                    </div>
+                    
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary flex-grow-1 fw-bold">บันทึกการแก้ไข</button>
+                        <a href="/admin/" class="btn btn-secondary px-4 fw-bold">ยกเลิก</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

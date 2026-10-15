@@ -1,0 +1,10 @@
+# Binaries
+*.exe
+__debug_bin
+
+# Database
+*.db
+
+# Uploads
+/uploads/*
+!/uploads/.keep

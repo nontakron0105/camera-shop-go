@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <title>Camera Shop</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style> 
+        body { font-family: 'Prompt', sans-serif; background-color: #f4f7f6; } 
+        .desc-truncate { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    </style>
+</head>
+<body class="container mt-4 mb-5">
+    <div class="d-flex justify-content-between align-items-center bg-white p-3 rounded shadow-sm mb-4">
+        <h2 class="fw-bold mb-0 text-primary"><i class="fa-solid fa-camera"></i> Nontakron Camera Store</h2>
+        
+        <!-- ส่วนนี้แสดงชื่อ Username -->
+        <div class="d-flex align-items-center">
+            <span class="me-3 fw-bold text-secondary"><i class="fa-solid fa-circle-user"></i> คุณ: <span class="text-primary">{{.Username}}</span></span>
+            <a href="/logout" class="btn btn-outline-danger btn-sm">ออกจากระบบ</a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- ฝั่งซ้าย: ออเดอร์ของฉัน -->
+        <div class="col-lg-4 mb-4">
+            <div class="card p-3 shadow-sm border-0 mb-3">
+                <h5 class="fw-bold mb-3"><i class="fa-solid fa-box"></i> ออเดอร์ของฉัน</h5>
+                <ul class="list-group list-group-flush">
+                    {{range .Orders}}
+                    <li class="list-group-item px-0">
+                        <strong>{{.Product.Title}}</strong><br>
+                        <small class="text-muted">รหัสออเดอร์: #{{.ID}}</small><br>
+                        <small class="text-primary"><i class="fa-solid fa-location-dot"></i> ที่อยู่: {{.Remark}}</small><br>
+                        
+                        <!-- เปลี่ยนสีสถานะ: เขียว (จัดส่งสำเร็จ), เหลือง (กำลังจัดส่ง), แดง (รอตรวจสอบ) -->
+                        {{if eq .Status "จัดส่งสำเร็จ"}}
+                            <span class="badge bg-success mt-1 mb-2"><i class="fa-solid fa-circle-check"></i> สถานะ: {{.Status}}</span>
+                        {{else if eq .Status "กำลังจัดส่ง"}}
+                            <span class="badge bg-warning text-dark mt-1 mb-2"><i class="fa-solid fa-truck-fast"></i> สถานะ: {{.Status}}</span>
+                        {{else}}
+                            <span class="badge bg-danger mt-1 mb-2"><i class="fa-solid fa-hourglass-half"></i> สถานะ: {{.Status}}</span>
+                        {{end}}
+                        
+                        <div class="d-flex gap-2 mt-1">
+                            <a href="/order/edit/{{.ID}}" class="btn btn-sm btn-outline-primary" style="font-size: 12px;">แก้ไขที่อยู่</a>
+                            <form action="/order/delete/{{.ID}}" method="POST" style="display:inline;">
+                                <button type="submit" class="btn btn-sm btn-outline-danger" style="font-size: 12px;" onclick="return confirm('ต้องการยกเลิกคำสั่งซื้อนี้ใช่หรือไม่?');">ยกเลิกออเดอร์</button>
+                            </form>
+                        </div>
+                    </li>
+                    {{else}}
+                    <li class="list-group-item px-0 text-muted small">ยังไม่มีประวัติการสั่งซื้อ</li>
+                    {{end}}
+                </ul>
+            </div>
+        </div>
+
+        <!-- ฝั่งขวา: หน้าร้าน -->
+        <div class="col-lg-8">
+            <div class="card p-3 shadow-sm border-0 mb-4">
+                <form action="/" method="GET" class="d-flex">
+                    <input class="form-control me-2" type="search" name="search" placeholder="🔍 ค้นหารุ่นกล้อง..." value="{{.SearchQuery}}">
+                    <button class="btn btn-outline-primary fw-bold" type="submit">ค้นหา</button>
+                    {{if .SearchQuery}}<a href="/" class="btn btn-outline-secondary ms-2">ล้าง</a>{{end}}
+                </form>
+            </div>
+
+            <h5 class="fw-bold mb-3"><i class="fa-solid fa-shop"></i> สินค้าพร้อมจำหน่าย</h5>
+            <div class="row g-3">
+                {{range .Products}}
+                <div class="col-md-6">
+                    <div class="card h-100 shadow-sm border-0">
+                        {{if .ImageURL}} <img src="{{.ImageURL}}" class="card-img-top" style="height:200px; object-fit:cover;"> {{end}}
+                        <div class="card-body d-flex flex-column">
+                            <h5 class="card-title fw-bold">{{.Title}}</h5>
+                            <p class="card-text text-muted small flex-grow-1 desc-truncate">{{.Description}}</p>
+                            
+                            <div class="d-flex gap-2 mt-auto">
+                                <button type="button" class="btn btn-outline-info w-50 fw-bold" data-bs-toggle="modal" data-bs-target="#detailModal{{.ID}}">
+                                    <i class="fa-solid fa-circle-info"></i> รายละเอียด
+                                </button>
+                                <button type="button" class="btn btn-primary w-50 fw-bold" data-bs-toggle="modal" data-bs-target="#orderModal{{.ID}}">
+                                    <i class="fa-solid fa-cart-shopping"></i> สั่งซื้อ
+                                </button>
+                            </div>
+
+                            <!-- Modal รายละเอียด -->
+                            <div class="modal fade" id="detailModal{{.ID}}" tabindex="-1" aria-hidden="true">
+                                <div class="modal-dialog modal-dialog-centered">
+                                    <div class="modal-content">
+                                        <div class="modal-header bg-info text-white">
+                                            <h5 class="modal-title fw-bold">รายละเอียดสินค้า</h5>
+                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body text-start">
+                                            <div class="row g-2 mb-3">
+                                                {{if .ImageURL}}<div class="col-12"><img src="{{.ImageURL}}" class="img-fluid rounded w-100 shadow-sm" style="height: 220px; object-fit: cover;"></div>{{end}}
+                                                {{if .ImageURL2}}<div class="col-6"><img src="{{.ImageURL2}}" class="img-fluid rounded w-100 shadow-sm" style="height: 110px; object-fit: cover;"></div>{{end}}
+                                                {{if .ImageURL3}}<div class="col-6"><img src="{{.ImageURL3}}" class="img-fluid rounded w-100 shadow-sm" style="height: 110px; object-fit: cover;"></div>{{end}}
+                                            </div>
+                                            <h4 class="fw-bold text-dark">{{.Title}}</h4>
+                                            <p class="text-muted" style="white-space: pre-wrap;">{{.Description}}</p>
+                                        </div>
+                                        <div class="modal-footer"><button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">ปิด</button></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Modal สั่งซื้อ -->
+                            <div class="modal fade" id="orderModal{{.ID}}" tabindex="-1" aria-hidden="true">
+                                <div class="modal-dialog modal-dialog-centered">
+                                    <div class="modal-content">
+                                        <div class="modal-header bg-primary text-white">
+                                            <h5 class="modal-title fw-bold">ยืนยันการสั่งซื้อ</h5>
+                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <form action="/order/{{.ID}}" method="POST">
+                                            <div class="modal-body text-start">
+                                                <p class="mb-2"><strong>สินค้า:</strong> {{.Title}}</p>
+                                                <div class="mb-3">
+                                                    <label class="form-label fw-bold small text-secondary">กรอกที่อยู่สำหรับจัดส่ง</label>
+                                                    <textarea name="remark" class="form-control" rows="3" placeholder="บ้านเลขที่, ถนน, ตำบล, อำเภอ, จังหวัด..." required></textarea>
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">ยกเลิก</button>
+                                                <button type="submit" class="btn btn-success rounded-pill px-4">ยืนยันสั่งซื้อ</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+                {{end}}
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
