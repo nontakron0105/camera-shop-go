@@ -2,15 +2,14 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"time"
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
+	"github.com/glebarez/sqlite" // แก้ไข: เปลี่ยนมาใช้ SQLite แบบ Pure Go (แก้ปัญหาบน Windows)
 	"golang.org/x/crypto/bcrypt"
-	"gorm.io/driver/sqlite" // แก้ไข: เปลี่ยนมาใช้ SQLite
 	"gorm.io/gorm"
 )
 
@@ -48,10 +47,10 @@ func main() {
 	os.MkdirAll("./uploads", 0755)
 
 	var err error
-	// แก้ไข: ใช้ SQLite สร้างไฟล์ database.db อัตโนมัติ (ไม่ต้องพึ่ง XAMPP)
+	// แก้ไข: เชื่อมต่อฐานข้อมูลและให้คาย Error ออกมาแบบละเอียดถ้ามีปัญหา
 	db, err = gorm.Open(sqlite.Open("database.db"), &gorm.Config{})
 	if err != nil {
-		log.Fatal("Failed to connect to database")
+		panic("Database Connection Error: " + err.Error())
 	}
 	db.AutoMigrate(&User{}, &Product{}, &Order{})
 
@@ -100,7 +99,6 @@ func main() {
 		adminRoute.POST("/order/delete/:id", adminDeleteOrderHandler)
 	}
 
-	// แก้ไข: ตั้งค่าให้ดึง Port จาก Render อัตโนมัติ (แต่รันในคอมตัวเองยังเป็น 8081)
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8081"
